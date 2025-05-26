@@ -15,26 +15,29 @@ import java.util.stream.IntStream;
 @EnableWebSecurity
 public class SecurityConfig {
 
-    @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        http
-                .authorizeHttpRequests(authorize -> authorize
-                        .requestMatchers(SecurityMatchers.NON_API).permitAll()
-                        .anyRequest().authenticated()
-                )
-                .logout(AbstractHttpConfigurer::disable); // 로그아웃 관련 필터 제외
+  @Bean
+  public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+    http
+        .authorizeHttpRequests(authorize -> authorize
+            .requestMatchers(
+                SecurityMatchers.NON_API,
+                SecurityMatchers.GET_CSRF_TOKEN)
+            .permitAll()
+            .anyRequest().authenticated()
+        )
+        .logout(AbstractHttpConfigurer::disable); // 로그아웃 관련 필터 제외
 
-        return http.build();
-    }
+    return http.build();
+  }
 
-    @Bean
-    public String debugFilterChain(SecurityFilterChain chain) {
-        log.debug("Debug Filter Chain...");
-        int filterSize = chain.getFilters().size();
-        IntStream.range(0, filterSize)
-                .forEach(index -> {
-                    log.debug("[{}/{}] {}", index + 1, filterSize, chain.getFilters().get(index));
-                });
-        return "debugFilterChain";
-    }
+  @Bean
+  public String debugFilterChain(SecurityFilterChain chain) {
+    log.debug("Debug Filter Chain...");
+    int filterSize = chain.getFilters().size();
+    IntStream.range(0, filterSize)
+        .forEach(index -> {
+          log.debug("[{}/{}] {}", index + 1, filterSize, chain.getFilters().get(index));
+        });
+    return "debugFilterChain";
+  }
 }
