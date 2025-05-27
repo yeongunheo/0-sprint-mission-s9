@@ -2,7 +2,6 @@ package com.sprint.mission.discodeit.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sprint.mission.discodeit.entity.Role;
-import com.sprint.mission.discodeit.security.CustomLogoutFilter;
 import com.sprint.mission.discodeit.security.CustomSessionInformationExpiredStrategy;
 import com.sprint.mission.discodeit.security.JsonUsernamePasswordAuthenticationFilter;
 import com.sprint.mission.discodeit.security.SecurityMatchers;
@@ -17,10 +16,10 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.core.session.SessionRegistry;
 import org.springframework.security.core.session.SessionRegistryImpl;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -29,11 +28,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 
 import java.util.stream.IntStream;
-import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.security.web.authentication.logout.LogoutFilter;
-import org.springframework.security.web.authentication.session.RegisterSessionAuthenticationStrategy;
-import org.springframework.security.web.authentication.session.SessionAuthenticationStrategy;
-import org.springframework.security.web.session.ConcurrentSessionFilter;
+import org.springframework.security.web.authentication.logout.HttpStatusReturningLogoutSuccessHandler;
 
 @Slf4j
 @Configuration
@@ -64,10 +59,10 @@ public class SecurityConfig {
       HttpSecurity http,
       ObjectMapper objectMapper,
       AuthenticationManager authenticationManager,
-      SessionAuthenticationStrategy sessionAuthenticationStrategy,
       SessionRegistry sessionRegistry
   ) throws Exception {
     http
+        .authenticationManager(authenticationManager)
         .authorizeHttpRequests(authorize -> authorize
             .requestMatchers(
                 SecurityMatchers.NON_API,
@@ -78,22 +73,18 @@ public class SecurityConfig {
             .anyRequest().hasRole(Role.USER.name())
         )
         .csrf(csrf -> csrf.ignoringRequestMatchers(SecurityMatchers.LOGOUT))
-        .logout(AbstractHttpConfigurer::disable) // 로그아웃 관련 필터 제외
-        .addFilterAt(
-            JsonUsernamePasswordAuthenticationFilter.createDefault(
-                objectMapper,
-                authenticationManager,
-                sessionAuthenticationStrategy
-            ),
-            UsernamePasswordAuthenticationFilter.class
+        .logout(logout ->
+            logout
+                .logoutRequestMatcher(SecurityMatchers.LOGOUT)
+                .logoutSuccessHandler(new HttpStatusReturningLogoutSuccessHandler())
         )
-        .addFilterAt(
-            CustomLogoutFilter.createDefault(),
-            LogoutFilter.class
+        .with(new JsonUsernamePasswordAuthenticationFilter.Configurer(objectMapper), Customizer.withDefaults())
+        .sessionManagement(session -> session
+            .maximumSessions(-1)
+            .sessionRegistry(sessionRegistry)
+            .expiredSessionStrategy(new CustomSessionInformationExpiredStrategy(objectMapper))
         )
-        .addFilter(
-            new ConcurrentSessionFilter(sessionRegistry, new CustomSessionInformationExpiredStrategy(objectMapper))
-        );
+    ;
 
     return http.build();
   }
@@ -129,10 +120,5 @@ public class SecurityConfig {
   @Bean
   public SessionRegistry sessionRegistry() {
     return new SessionRegistryImpl();
-  }
-
-  @Bean
-  public SessionAuthenticationStrategy sessionAuthenticationStrategy(SessionRegistry sessionRegistry) {
-    return new RegisterSessionAuthenticationStrategy(sessionRegistry);
   }
 }
