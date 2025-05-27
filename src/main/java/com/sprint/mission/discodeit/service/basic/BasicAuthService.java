@@ -15,6 +15,7 @@ import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.session.SessionInformation;
 import org.springframework.security.core.session.SessionRegistry;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -75,6 +76,7 @@ public class BasicAuthService implements AuthService {
     return userMapper.toDto(user);
   }
 
+  @PreAuthorize("hasRole('ADMIN')")
   @Transactional
   @Override
   public UserDto updateRole(RoleUpdateRequest request) {
