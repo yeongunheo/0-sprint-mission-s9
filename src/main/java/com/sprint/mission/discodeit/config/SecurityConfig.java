@@ -3,6 +3,7 @@ package com.sprint.mission.discodeit.config;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sprint.mission.discodeit.entity.Role;
 import com.sprint.mission.discodeit.security.CustomLogoutFilter;
+import com.sprint.mission.discodeit.security.CustomSessionInformationExpiredStrategy;
 import com.sprint.mission.discodeit.security.JsonUsernamePasswordAuthenticationFilter;
 import com.sprint.mission.discodeit.security.SecurityMatchers;
 import java.util.List;
@@ -19,6 +20,8 @@ import org.springframework.security.authentication.dao.DaoAuthenticationProvider
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.core.session.SessionRegistry;
+import org.springframework.security.core.session.SessionRegistryImpl;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -27,6 +30,9 @@ import org.springframework.security.web.SecurityFilterChain;
 import java.util.stream.IntStream;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.authentication.logout.LogoutFilter;
+import org.springframework.security.web.authentication.session.RegisterSessionAuthenticationStrategy;
+import org.springframework.security.web.authentication.session.SessionAuthenticationStrategy;
+import org.springframework.security.web.session.ConcurrentSessionFilter;
 
 @Slf4j
 @Configuration
@@ -55,7 +61,9 @@ public class SecurityConfig {
   public SecurityFilterChain filterChain(
       HttpSecurity http,
       ObjectMapper objectMapper,
-      AuthenticationManager authenticationManager
+      AuthenticationManager authenticationManager,
+      SessionAuthenticationStrategy sessionAuthenticationStrategy,
+      SessionRegistry sessionRegistry
   ) throws Exception {
     http
         .authorizeHttpRequests(authorize -> authorize
@@ -72,13 +80,17 @@ public class SecurityConfig {
         .addFilterAt(
             JsonUsernamePasswordAuthenticationFilter.createDefault(
                 objectMapper,
-                authenticationManager
+                authenticationManager,
+                sessionAuthenticationStrategy
             ),
             UsernamePasswordAuthenticationFilter.class
         )
         .addFilterAt(
             CustomLogoutFilter.createDefault(),
             LogoutFilter.class
+        )
+        .addFilter(
+            new ConcurrentSessionFilter(sessionRegistry, new CustomSessionInformationExpiredStrategy(objectMapper))
         );
 
     return http.build();
@@ -110,5 +122,15 @@ public class SecurityConfig {
         .implies(Role.USER.name())
 
         .build();
+  }
+
+  @Bean
+  public SessionRegistry sessionRegistry() {
+    return new SessionRegistryImpl();
+  }
+
+  @Bean
+  public SessionAuthenticationStrategy sessionAuthenticationStrategy(SessionRegistry sessionRegistry) {
+    return new RegisterSessionAuthenticationStrategy(sessionRegistry);
   }
 }
