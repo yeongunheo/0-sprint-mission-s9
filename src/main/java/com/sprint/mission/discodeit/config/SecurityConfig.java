@@ -6,7 +6,9 @@ import com.sprint.mission.discodeit.security.CustomSessionInformationExpiredStra
 import com.sprint.mission.discodeit.security.JsonUsernamePasswordAuthenticationFilter;
 import com.sprint.mission.discodeit.security.SecurityMatchers;
 import java.util.List;
+import javax.sql.DataSource;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.access.hierarchicalroles.RoleHierarchy;
@@ -29,6 +31,8 @@ import org.springframework.security.web.SecurityFilterChain;
 
 import java.util.stream.IntStream;
 import org.springframework.security.web.authentication.logout.HttpStatusReturningLogoutSuccessHandler;
+import org.springframework.security.web.authentication.rememberme.JdbcTokenRepositoryImpl;
+import org.springframework.security.web.authentication.rememberme.PersistentTokenBasedRememberMeServices;
 
 @Slf4j
 @Configuration
@@ -59,7 +63,8 @@ public class SecurityConfig {
       HttpSecurity http,
       ObjectMapper objectMapper,
       AuthenticationManager authenticationManager,
-      SessionRegistry sessionRegistry
+      SessionRegistry sessionRegistry,
+      PersistentTokenBasedRememberMeServices rememberMeServices
   ) throws Exception {
     http
         .authenticationManager(authenticationManager)
@@ -84,6 +89,7 @@ public class SecurityConfig {
             .sessionRegistry(sessionRegistry)
             .expiredSessionStrategy(new CustomSessionInformationExpiredStrategy(objectMapper))
         )
+        .rememberMe(rememberMe -> rememberMe.rememberMeServices(rememberMeServices))
     ;
 
     return http.build();
@@ -121,4 +127,22 @@ public class SecurityConfig {
   public SessionRegistry sessionRegistry() {
     return new SessionRegistryImpl();
   }
+
+  @Bean
+  public PersistentTokenBasedRememberMeServices rememberMeServices(
+      @Value("${security.remember-me.key}") String key,
+      @Value("${security.remember-me.token-validity-seconds}") int tokenValiditySeconds,
+      UserDetailsService userDetailsService,
+      DataSource dataSource
+  ) {
+    JdbcTokenRepositoryImpl tokenRepository = new JdbcTokenRepositoryImpl();
+    tokenRepository.setDataSource(dataSource);
+
+    PersistentTokenBasedRememberMeServices rememberMeServices = new PersistentTokenBasedRememberMeServices(
+        key, userDetailsService, tokenRepository);
+    rememberMeServices.setTokenValiditySeconds(tokenValiditySeconds);
+
+    return rememberMeServices;
+  }
+
 }
