@@ -1,4 +1,4 @@
-package com.sprint.mission.discodeit.config;
+package com.sprint.mission.discodeit.security;
 
 import org.springframework.http.HttpMethod;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
@@ -14,4 +14,6 @@ public class SecurityMatchers {
       "/api/auth/csrf-token", HttpMethod.GET.name());
   public static final RequestMatcher SIGN_UP = new AntPathRequestMatcher(
       "/api/users", HttpMethod.POST.name());
+  public static final RequestMatcher LOGIN = new AntPathRequestMatcher(
+      "/api/auth/login", HttpMethod.POST.name());
 }
