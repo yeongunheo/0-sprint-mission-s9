@@ -12,6 +12,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 
 @RequiredArgsConstructor
 public class JsonUsernamePasswordAuthenticationFilter extends UsernamePasswordAuthenticationFilter {
@@ -51,6 +52,7 @@ public class JsonUsernamePasswordAuthenticationFilter extends UsernamePasswordAu
     filter.setAuthenticationManager(authenticationManager);
     filter.setAuthenticationSuccessHandler(new CustomLoginSuccessHandler(objectMapper));
     filter.setAuthenticationFailureHandler(new CustomLoginFailureHandler(objectMapper));
+    filter.setSecurityContextRepository(new HttpSessionSecurityContextRepository());
     return filter;
   }
 }
