@@ -49,7 +49,8 @@ public class JsonUsernamePasswordAuthenticationFilter extends UsernamePasswordAu
         objectMapper);
     filter.setRequiresAuthenticationRequestMatcher(SecurityMatchers.LOGIN);
     filter.setAuthenticationManager(authenticationManager);
+    filter.setAuthenticationSuccessHandler(new CustomLoginSuccessHandler(objectMapper));
+    filter.setAuthenticationFailureHandler(new CustomLoginFailureHandler(objectMapper));
     return filter;
   }
-
 }
