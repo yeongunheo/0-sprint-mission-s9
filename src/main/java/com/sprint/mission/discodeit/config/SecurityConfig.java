@@ -1,6 +1,7 @@
 package com.sprint.mission.discodeit.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.sprint.mission.discodeit.security.CustomLogoutFilter;
 import com.sprint.mission.discodeit.security.JsonUsernamePasswordAuthenticationFilter;
 import com.sprint.mission.discodeit.security.SecurityMatchers;
 import java.util.List;
@@ -21,6 +22,7 @@ import org.springframework.security.web.SecurityFilterChain;
 
 import java.util.stream.IntStream;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.authentication.logout.LogoutFilter;
 
 @Slf4j
 @Configuration
@@ -59,6 +61,7 @@ public class SecurityConfig {
             .permitAll()
             .anyRequest().authenticated()
         )
+        .csrf(csrf -> csrf.ignoringRequestMatchers(SecurityMatchers.LOGOUT))
         .logout(AbstractHttpConfigurer::disable) // 로그아웃 관련 필터 제외
         .addFilterAt(
             JsonUsernamePasswordAuthenticationFilter.createDefault(
@@ -66,6 +69,10 @@ public class SecurityConfig {
                 authenticationManager
             ),
             UsernamePasswordAuthenticationFilter.class
+        )
+        .addFilterAt(
+            CustomLogoutFilter.createDefault(),
+            LogoutFilter.class
         );
 
     return http.build();
