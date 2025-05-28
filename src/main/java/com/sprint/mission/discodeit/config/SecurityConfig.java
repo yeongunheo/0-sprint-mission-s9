@@ -5,6 +5,7 @@ import com.sprint.mission.discodeit.entity.Role;
 import com.sprint.mission.discodeit.security.CustomSessionInformationExpiredStrategy;
 import com.sprint.mission.discodeit.security.JsonUsernamePasswordAuthenticationFilter;
 import com.sprint.mission.discodeit.security.SecurityMatchers;
+import com.sprint.mission.discodeit.security.SessionRegistryLogoutHandler;
 import java.util.List;
 import javax.sql.DataSource;
 import lombok.extern.slf4j.Slf4j;
@@ -82,6 +83,7 @@ public class SecurityConfig {
             logout
                 .logoutRequestMatcher(SecurityMatchers.LOGOUT)
                 .logoutSuccessHandler(new HttpStatusReturningLogoutSuccessHandler())
+                .addLogoutHandler(new SessionRegistryLogoutHandler(sessionRegistry))
         )
         .with(new JsonUsernamePasswordAuthenticationFilter.Configurer(objectMapper), Customizer.withDefaults())
         .sessionManagement(session -> session
