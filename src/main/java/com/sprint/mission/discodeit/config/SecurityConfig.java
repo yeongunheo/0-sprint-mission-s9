@@ -85,6 +85,7 @@ public class SecurityConfig {
         )
         .with(new JsonUsernamePasswordAuthenticationFilter.Configurer(objectMapper), Customizer.withDefaults())
         .sessionManagement(session -> session
+            .sessionFixation().migrateSession()
             .maximumSessions(1)
             .maxSessionsPreventsLogin(false)
             .sessionRegistry(sessionRegistry)
